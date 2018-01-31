@@ -31,14 +31,30 @@ class Pond():
                 if getDistance(org, food) < MAXIMUM_EATING_DISTANCE:
                     org.eat(food.food)
                     food.food = 0
+                    
+        # Lay any eggs
+        for org in self.orgs:
+            org.decrementTimeToEgg()
+            if org.timeToEgg <= 0:
+                self.eggs.append(org.layEgg())
+                if not self.eggs[-1]:
+                    self.eggs = self.eggs[:-1]
+                
+        # Hatch any eggs
+        for egg in self.eggs:
+            egg.decrementHatch()
+            if egg.hatchTime <= 0:
+                self.orgs.append(egg.hatch())
         
         # Check food to see if it needs to be deleted.
         self.removeEatenFood()
         self.removeDeadOrgs()
+        self.removeHatchedEggs()
         
         # Update time and move on
         self.t += 1
-        print(f'Time: {self.t}')
+        #print(f'Time: {self.t}')
+        #print(f"Net food: {round(self.countNetFood(), 2)}")
         return
 
     def getNearestFood(self, organism):
@@ -69,6 +85,23 @@ class Pond():
                 newOrgs.append(org)
         self.orgs = newOrgs
         return
+    
+    def removeHatchedEggs(self):
+        
+        newEggs = []
+        for egg in self.eggs:
+            if egg.hatchTime > 0:
+                newEggs.append(egg)
+        self.eggs = newEggs
+        return
+    
+    def countNetFood(self):
+        
+        total = sum([i.food for i in self.food])
+        total += sum([i.food for i in self.orgs])
+        total += len(self.eggs)
+        return total
+        
 
 class Food():
 
