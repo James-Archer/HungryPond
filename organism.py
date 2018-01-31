@@ -1,7 +1,7 @@
 from organismConstants import *
 from random import gauss, uniform
-from NeuralNetwork import *
-from math import sin, cos
+import neuralnetwork as NN
+from math import sin, cos, pi
 
 ''' The initial network configuration to act as the brain
 Three inputs:
@@ -16,7 +16,7 @@ Two outputs:
 Two laters with two neurons each
 '''
 
-BASE_NETWORK = Network()
+BASE_NETWORK = NN.Network()
 BASE_NETWORK.createNetwork([3,2],[2,2])
 
 class Organism:
@@ -36,10 +36,15 @@ class Organism:
                       "carnFeat":0
                       }
 
+        self.alive = True
         self.food = 1
         self.pos = {'x':0,'y':0}
         self.brain = BASE_NETWORK.copyNetwork()
-        self.brain.mutate()
+        self.brain.populateNetwork()
+        
+        # Really scramble the brain
+        for i in range(100):
+            self.brain.mutate()
         self.pond = pond
 
     def __str__(self):
@@ -56,19 +61,28 @@ class Organism:
         return s
 
     def think(self):
-
         food_angle, food_dist = self.pond.getNearestFood(self)
         speed, direction = self.brain.runInputs([self.food,
-                                                food_angle,
+                                                food_angle/2*pi,
                                                 food_dist])
 
-        self.move(speed, direction)
+        #print(speed, direction)
+        self.move(speed, direction*2*pi)
         
     def move(self, speed, direction):
 
-        self.pos['x'] += self.BASE_STATS['speed'] * speed * cos(direction)
-        self.pos['y'] += self.BASE_STATS['speed'] * sin(direction)
-        self.food -= 0.001 * speed * self.CALC_STATS["metabolism"]
+        newX = self.pos['x'] + self.BASE_STATS['speed'] * speed * cos(direction)
+        newY = self.pos['y'] + self.BASE_STATS['speed'] * speed * sin(direction)
+        
+        if newX >= self.pond.dimensions['x'] or newX <= 0:
+            newX = self.pos['x'] - self.BASE_STATS['speed'] * speed * cos(direction)
+        if newY >= self.pond.dimensions['y'] or newY <= 0:
+            newY = self.pos['y'] - self.BASE_STATS['speed'] * speed * cos(direction)
+        
+        self.pos['x'] = newX
+        self.pos['y'] = newY
+        self.food -= EFFICIENCY * speed * self.CALC_STATS["metabolism"]
+        self.checkAlive()
 
         
     def eat(self, food):
@@ -80,7 +94,7 @@ class Organism:
 
         self.CALC_STATS["metabolism"] = (self.BASE_STATS["strength"]
                                     + self.BASE_STATS["speed"])
-        if self.BASE_STAT["diet"] == "meat":
+        if self.BASE_STATS["diet"] == "meat":
             self.CALC_STATS["metabolism"] /= 2
 
     def updateEggFreq(self):
@@ -98,6 +112,11 @@ class Organism:
     def layEgg(self):
 
         return Egg(self)
+    
+    def checkAlive(self):
+        
+        if self.food <= 0:
+            self.alive = False
 
 class Egg():
 

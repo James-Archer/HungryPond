@@ -1,6 +1,7 @@
 from organism import *
 from pondConstants import *
 from math import sqrt, atan, pi
+from random import uniform
 
 class Pond():
 
@@ -20,15 +21,24 @@ class Pond():
         for i in range(0, INITIAL_FOOD):
             self.food.append(Food())
 
-    def step():
+    def step(self):
 
+        # Move the organisms, and check if they eat food
         for org in self.orgs:
+            org.updateMetabolism()
             org.think()
             for food in self.food:
-                if getDistance(org, food) < 0.1:
+                if getDistance(org, food) < MAXIMUM_EATING_DISTANCE:
                     org.eat(food.food)
                     food.food = 0
         
+        # Check food to see if it needs to be deleted.
+        self.removeEatenFood()
+        self.removeDeadOrgs()
+        
+        # Update time and move on
+        self.t += 1
+        print(f'Time: {self.t}')
         return
 
     def getNearestFood(self, organism):
@@ -41,7 +51,24 @@ class Pond():
                     nearestDist = d
                     nearestFood = food
             return getAngle(organism, nearestFood), nearestDist
-
+        
+    def removeEatenFood(self):
+        
+        newFood = []
+        for food in self.food:
+            if food.food != 0:
+                newFood.append(food)
+        self.food = newFood
+        return
+    
+    def removeDeadOrgs(self):
+        
+        newOrgs = []
+        for org in self.orgs:
+            if org.alive:
+                newOrgs.append(org)
+        self.orgs = newOrgs
+        return
 
 class Food():
 
@@ -51,7 +78,7 @@ class Food():
             self.pos = pos
         else:
             self.pos = randomPos()                     
-        self.food = 1
+        self.food = NEW_FOOD_VALUE
         
 
 def randomPos():
