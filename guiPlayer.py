@@ -30,12 +30,33 @@ class MainWindow(QMainWindow):
 
     def initUI(self):
         
-        self.setGeometry(50, 50, int(0.5*self.pond.dimensions['x']), int(0.5*self.pond.dimensions['y']))
+        self.setGeometry(50, 50, 150 + int(0.5*self.pond.dimensions['x']),
+                         int(0.5*self.pond.dimensions['y']))
         self.mainWidget = QWidget(self)
         self.setCentralWidget(self.mainWidget)
         self.setWindowTitle('PondSim')
         self.pondThread = PondThread(self)
-        self.world = QWidget(self.mainWidget)
+        self.world = WorldWidget(self)
+        
+        mainLayout = QHBoxLayout()
+        subWidget = QWidget(self.mainWidget)
+        subLayout1 = QVBoxLayout()
+        subLayout1.stretch(1)
+        self.timeText = QLabel(f"Time:\n{self.pond.t}", self.mainWidget)
+        self.numOrgsText = QLabel(f"Population:\n{len(self.pond.orgs)} (+{len(self.pond.eggs)})", self.mainWidget)
+        self.foodFreeText = QLabel(f"Food:\n{sum([i.food for i in self.pond.food])}", self.mainWidget)
+        self.totalFreeFoodText = QLabel(f"Total food:\n{round(self.pond.countNetFood(), 2)}", self.mainWidget)
+        
+        subLayout1.addWidget(self.timeText)
+        subLayout1.addWidget(self.numOrgsText)
+        subLayout1.addWidget(self.foodFreeText)
+        subLayout1.addWidget(self.totalFreeFoodText)
+        subWidget.setLayout(subLayout1)
+        subWidget.setFixedWidth(100)
+        mainLayout.addWidget(subWidget)
+        mainLayout.addWidget(self.world)
+        
+        self.mainWidget.setLayout(mainLayout)
         self.show()
     
     def closeEvent(self, event):
@@ -44,6 +65,26 @@ class MainWindow(QMainWindow):
         time.sleep(0.1)
         event.accept()
         
+    def updateText(self):
+        
+        self.timeText.setText(f"Time:\n{self.pond.t}")
+        self.numOrgsText.setText(f"Population:\n{len(self.pond.orgs)} (+{len(self.pond.eggs)})")
+        self.foodFreeText.setText(f"Food:\n{sum([i.food for i in self.pond.food])}")
+        self.totalFreeFoodText.setText(f"Total food:\n{round(self.pond.countNetFood(), 2)}")
+        
+    def checkFinished(self):
+        
+        if len(self.pond.orgs) + len(self.pond.eggs) == 0:
+            self.running = False
+            self.updateText()
+            
+class WorldWidget(QWidget):
+    
+    def __init__(self, parent):
+        
+        super().__init__()
+        self.parent = parent
+
     def paintEvent(self, e):
 
         qp = QPainter()
@@ -60,20 +101,30 @@ class MainWindow(QMainWindow):
         size = self.size()
         
         # Draw the food
-        for i in self.pond.food:
-            x = i.pos['x']/self.pond.dimensions['x']*size.width()
-            y = i.pos['y']/self.pond.dimensions['y']*size.height()
+        for i in self.parent.pond.food:
+            x = i.pos['x']/self.parent.pond.dimensions['x']*size.width()
+            y = i.pos['y']/self.parent.pond.dimensions['y']*size.height()
             #qp.drawPoint(x, y)
-            qp.drawEllipse(QRectF(x, y, 5, 5))
+            qp.drawEllipse(QRectF(x-3, y-3, 6, 6))
+            
+        qp.setPen(Qt.blue)   
+        brush.setColor(Qt.blue)
+        qp.setBrush(brush)
+        # Draw the eggs
+        for i in self.parent.pond.eggs:
+            x = i.pos['x']/self.parent.pond.dimensions['x']*size.width()
+            y = i.pos['y']/self.parent.pond.dimensions['y']*size.height()
+            qp.drawRect(QRectF(x-3, y-3, 6, 6))
             
         qp.setPen(Qt.green)   
         brush.setColor(Qt.green)
         qp.setBrush(brush)
         # Draw the organisms
-        for i in self.pond.orgs:
-            x = i.pos['x']/self.pond.dimensions['x']*size.width()
-            y = i.pos['y']/self.pond.dimensions['y']*size.height()
-            qp.drawEllipse(QRectF(x, y, 10, 10))
+        for i in self.parent.pond.orgs:
+            x = i.pos['x']/self.parent.pond.dimensions['x']*size.width()
+            y = i.pos['y']/self.parent.pond.dimensions['y']*size.height()
+            qp.drawEllipse(QRectF(x-5, y-5, 10, 10))
+    
         
 class PondThread(QThread):
     
@@ -86,6 +137,8 @@ class PondThread(QThread):
         while self.master.running:
             self.master.pond.step()
             self.master.update()
+            self.master.updateText()
+            self.master.checkFinished()
             time.sleep(0.01)
         
 if __name__=='__main__':
