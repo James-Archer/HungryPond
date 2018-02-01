@@ -79,6 +79,8 @@ class Pond():
     
     def removeDeadOrgs(self):
         
+        if self.orgs == []:
+            return
         newOrgs = []
         for org in self.orgs:
             if org.alive:
@@ -88,6 +90,8 @@ class Pond():
     
     def removeHatchedEggs(self):
         
+        if self.eggs == []:
+            return
         newEggs = []
         for egg in self.eggs:
             if egg.hatchTime > 0:
