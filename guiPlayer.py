@@ -30,13 +30,13 @@ class MainWindow(QMainWindow):
 
     def initUI(self):
         
-        self.setGeometry(50, 50, 150 + int(0.5*self.pond.dimensions['x']),
-                         int(0.5*self.pond.dimensions['y']))
+        self.setGeometry(50, 50, 0, 0)
         self.mainWidget = QWidget(self)
         self.setCentralWidget(self.mainWidget)
         self.setWindowTitle('PondSim')
         self.pondThread = PondThread(self)
         self.world = WorldWidget(self)
+        self.orgsList = OrgsList(self)
         
         mainLayout = QHBoxLayout()
         subWidget = QWidget(self.mainWidget)
@@ -55,6 +55,7 @@ class MainWindow(QMainWindow):
         subWidget.setFixedWidth(100)
         mainLayout.addWidget(subWidget)
         mainLayout.addWidget(self.world)
+        mainLayout.addWidget(self.orgsList)
         
         self.mainWidget.setLayout(mainLayout)
         self.show()
@@ -71,6 +72,7 @@ class MainWindow(QMainWindow):
         self.numOrgsText.setText(f"Population:\n{len(self.pond.orgs)} (+{len(self.pond.eggs)})")
         self.foodFreeText.setText(f"Food:\n{sum([i.food for i in self.pond.food])}")
         self.totalFreeFoodText.setText(f"Total food:\n{round(self.pond.countNetFood(), 2)}")
+        self.orgsList.updateText()
         
     def checkFinished(self):
         
@@ -84,6 +86,8 @@ class WorldWidget(QWidget):
         
         super().__init__()
         self.parent = parent
+        self.setFixedSize(int(self.parent.pond.dimensions['x']*0.5),
+                          int(self.parent.pond.dimensions['y']*0.5))
 
     def paintEvent(self, e):
 
@@ -124,22 +128,106 @@ class WorldWidget(QWidget):
             x = i.pos['x']/self.parent.pond.dimensions['x']*size.width()
             y = i.pos['y']/self.parent.pond.dimensions['y']*size.height()
             qp.drawEllipse(QRectF(x-5, y-5, 10, 10))
+            
+class OrgsList(QWidget):
     
+    def __init__(self, parent):
+        
+        super().__init__()
+        self.parent = parent
+        self.pond = self.parent.pond
+        self.initUI()
+        
+    def initUI(self):
+        
+        self.layout = QVBoxLayout()
+        self.layout.stretch(1)
+        self.orgsDisplays = []
+        for org in self.pond.orgs:
+            self.orgsDisplays.append(OrgsDisplay(self, org))
+            self.layout.addWidget(self.orgsDisplays[-1])
+        self.setLayout(self.layout)
+        
+    def updateText(self):
+        
+        self.checkAlive()
+        #self.checkNewOrgs()
+        for i in self.orgsDisplays:
+            i.updateText()
+            
+    def checkAlive(self):
+        for i in self.orgsDisplays:
+            if i.org.food <= 0:
+                #self.layout.removeWidget(i)
+                i.setParent(None)
+                #i.deleteLater()
+                i = None
+        self.orgsDisplays = [i for i in self.orgsDisplays if i != None]
+    
+    def checkNewOrgs(self):
+        
+        for org in self.pond.orgs:
+            if not any(i.org == org for i in self.orgsDisplays):
+                self.orgsDisplays.append(OrgsDisplay(self, org))
+                self.layout.addWidget(self.orgsDisplays[-1])
+        
+class OrgsDisplay(QWidget):
+    
+    def __init__(self, parent, org):
+        
+        super().__init__()
+        self.parent = parent
+        self.org = org
+        self.initUI()
+        
+    def initUI(self):
+        
+        self.nameText = QLabel(f"<b>{self.org.name}</b>")
+        self.foodText = QLabel(f"Food: {round(self.org.food, 2)}")
+        
+        layout = QVBoxLayout()
+        layout.stretch(1)
+        layout.addWidget(self.nameText)
+        layout.addWidget(self.foodText)
+        self.setLayout(layout)
+        self.setFixedWidth(150)
+        
+    def updateText(self):
+        
+        self.nameText.setText(f"<b>{self.org.name}</b>")
+        self.foodText.setText(f"Food: {round(self.org.food, 2)}")
         
 class PondThread(QThread):
     
-    def __init__(self, master):
+    def __init__(self, master, fps = 25, cps = 100):
         
         super().__init__()
         self.master = master
+        self.fps = fps
+        self.cps = cps
+        self.lastUpdate = 0
+        self.updateTime = self.cps/self.fps
 
     def run(self):
         while self.master.running:
-            self.master.pond.step()
-            self.master.update()
-            self.master.updateText()
+            self.lastUpdate += 1
+            self.updatePond()
+            if self.lastUpdate >= self.updateTime:
+                self.lastUpdate = 0
+                self.updateGUI()
             self.master.checkFinished()
             time.sleep(0.01)
+        self.updateGUI()
+        print('Thread finished')
+    
+    def updatePond(self):
+        
+        self.master.pond.step()
+        
+    def updateGUI(self):
+        
+        self.master.world.update()
+        self.master.updateText()
         
 if __name__=='__main__':
     
