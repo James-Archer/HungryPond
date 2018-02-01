@@ -2,20 +2,25 @@ from organism import *
 from pondConstants import *
 from math import sqrt, atan, pi
 from random import uniform
+import pickle as Pi
+import time as time
 
 class Pond():
 
-    def __init__(self, n):
+    def __init__(self, n, save = False):
 
         self.orgs = []
         self.eggs = []
         self.dimensions = DIMENSIONS
         self.food = []
         self.t = 0
+        self.saveFinalState = save
+        self.deadOrgs = []
 
         for i in range(0,n):
             newOrg = Organism(self)
             newOrg.pos = randomPos()
+            newOrg.birthday = self.t
             self.orgs.append(newOrg)
 
         for i in range(0, INITIAL_FOOD):
@@ -45,6 +50,7 @@ class Pond():
             egg.decrementHatch()
             if egg.hatchTime <= 0:
                 self.orgs.append(egg.hatch())
+                self.orgs[-1].birthday = self.t
         
         # Check food to see if it needs to be deleted.
         self.removeEatenFood()
@@ -85,6 +91,9 @@ class Pond():
         for org in self.orgs:
             if org.alive:
                 newOrgs.append(org)
+            else:
+                self.deadOrgs.append(org)
+                self.deadOrgs[-1].deathday = self.t
         self.orgs = newOrgs
         return
     
@@ -99,12 +108,27 @@ class Pond():
         self.eggs = newEggs
         return
     
+    def countOrgs(self):
+        
+        return len(self.orgs), len(self.eggs)
+    
     def countNetFood(self):
         
         total = sum([i.food for i in self.food])
         total += sum([i.food for i in self.orgs])
         total += len(self.eggs)
         return total
+    
+    def save(self):
+        
+        fName = f"./saves/{time.time()}.pi"
+        Pi.dump(self, open(fName, 'wb'))
+        return fName
+        
+    def runForN(self, n):
+        
+        while self.t < n and sum(self.countOrgs()) > 0:
+            self.step()
         
 
 class Food():
@@ -145,4 +169,18 @@ def getAngle(a,b):
     else:
         return (pi - atan(dy/dx))
     
+def time_test():
     
+    p = Pond(100)
+    p.runForN(1000)
+    return(Pi.load(open(p.save(), 'rb')))
+    
+if __name__ == "__main__":
+    
+    '''
+    Last timing test was 70 s
+    0.7 ms per org per step.
+    '''
+    p = Pond(100)
+    p.runForN(10000)
+    q = Pi.load(open(p.save(), 'rb'))

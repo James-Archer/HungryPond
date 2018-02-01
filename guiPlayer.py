@@ -36,7 +36,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle('PondSim')
         self.pondThread = PondThread(self)
         self.world = WorldWidget(self)
-        self.orgsList = OrgsList(self)
+        #self.orgsList = OrgsList(self)
         
         mainLayout = QHBoxLayout()
         subWidget = QWidget(self.mainWidget)
@@ -55,7 +55,7 @@ class MainWindow(QMainWindow):
         subWidget.setFixedWidth(100)
         mainLayout.addWidget(subWidget)
         mainLayout.addWidget(self.world)
-        mainLayout.addWidget(self.orgsList)
+        #mainLayout.addWidget(self.orgsList)
         
         self.mainWidget.setLayout(mainLayout)
         self.show()
@@ -72,7 +72,7 @@ class MainWindow(QMainWindow):
         self.numOrgsText.setText(f"Population:\n{len(self.pond.orgs)} (+{len(self.pond.eggs)})")
         self.foodFreeText.setText(f"Food:\n{sum([i.food for i in self.pond.food])}")
         self.totalFreeFoodText.setText(f"Total food:\n{round(self.pond.countNetFood(), 2)}")
-        self.orgsList.updateText()
+        #self.orgsList.updateText()
         
     def checkFinished(self):
         
@@ -199,7 +199,7 @@ class OrgsDisplay(QWidget):
         
 class PondThread(QThread):
     
-    def __init__(self, master, fps = 25, cps = 100):
+    def __init__(self, master, fps = 100, cps = 100):
         
         super().__init__()
         self.master = master
@@ -233,5 +233,7 @@ if __name__=='__main__':
     
     app = QApplication(sys.argv)
     ex = MainWindow(pond.Pond(10))
+    for i in ex.pond.orgs:
+        i.loadBrain('brain4', mutate = False)
     ex.pondThread.start()
     sys.exit(app.exec_())

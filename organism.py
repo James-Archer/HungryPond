@@ -3,6 +3,7 @@ from organismNames import *
 from random import gauss, uniform, choice
 import neuralnetwork as NN
 from math import sin, cos, pi
+import pickle as Pi
 
 ''' The initial network configuration to act as the brain
 Three inputs:
@@ -22,7 +23,7 @@ BASE_NETWORK.createNetwork([3,2],[2,2])
 
 class Organism:
 
-    def __init__(self, pond):
+    def __init__(self, pond, brain = None):
 
         self.BASE_STATS = {"strength":abs(gauss(MEAN_STRENGTH, STRENGTH_SD)),
                       "speed":abs(gauss(MEAN_SPEED, SPEED_SD)),
@@ -42,14 +43,19 @@ class Organism:
         self.alive = True
         self.food = 1
         self.pos = {'x':0,'y':0}
-        self.brain = BASE_NETWORK.copyNetwork()
-        self.brain.populateNetwork()
+        self.birthday = None
+        self.deathday = None
         self.updateAll()
-        
-        # Really scramble the brain
-        for i in range(100):
+        if brain:
+            self.brain = Pi.load(open(f"./brains/{brain}.pi", 'rb'))
             self.brain.mutate()
-        self.pond = pond
+        else:
+            self.brain = BASE_NETWORK.copyNetwork()
+            self.brain.populateNetwork()
+            # Really scramble the brain
+            for i in range(100):
+                self.brain.mutate()
+            self.pond = pond
 
     def __str__(self):
 
@@ -61,7 +67,8 @@ class Organism:
         for key, value in self.CALC_STATS.items():
             s += str(key) + ": " + str(value) + "\n"
 
-        s += 'Position: {}, {}\n'.format(self.pos['x'], self.pos['y'])
+        s += 'Position: {}, {}\n'.format(round(self.pos['x'], 2),
+                        round(self.pos['y'], 2))
 
         return s
 
@@ -144,6 +151,17 @@ class Organism:
         
         if self.food <= 0:
             self.alive = False
+            
+    def saveBrain(self, name):
+        
+        fName = f"./brains/{name}.pi"
+        Pi.dump(self, open(fName, 'wb'))
+        
+    def loadBrain(self, name, mutate = True):
+        
+        self.brain = Pi.load(open(f"./brains/{name}.pi", 'rb')).brain
+        if mutate:
+            self.brain.mutate()
 
 class Egg():
 
