@@ -1,5 +1,6 @@
 from organismConstants import *
 from organismNames import *
+from organismStartingBrains import brains
 from random import gauss, uniform, choice
 import neuralnetwork as NN
 from math import sin, cos, pi
@@ -18,12 +19,11 @@ Two outputs:
 Two laters with two neurons each
 '''
 
-BASE_NETWORK = NN.Network()
-BASE_NETWORK.createNetwork([3,2],[2,2])
+BASE_NETWORK = brains['Naive Brain']
 
 class Organism:
 
-    def __init__(self, pond, brain = None):
+    def __init__(self, pond, brain = None, mutate = False):
 
         self.BASE_STATS = {"strength":abs(gauss(MEAN_STRENGTH, STRENGTH_SD)),
                       "speed":abs(gauss(MEAN_SPEED, SPEED_SD)),
@@ -51,10 +51,11 @@ class Organism:
             self.brain.mutate()
         else:
             self.brain = BASE_NETWORK.copyNetwork()
-            self.brain.populateNetwork()
-            # Really scramble the brain
-            for i in range(100):
-                self.brain.mutate()
+            if mutate:
+                self.brain.populateNetwork()
+                # Really scramble the brain
+                for i in range(100):
+                    self.brain.mutate()
             self.pond = pond
 
     def __str__(self):
@@ -74,10 +75,12 @@ class Organism:
 
     def think(self):
         food_angle, food_dist = self.pond.getNearestFood(self)
+        #print(f"Angle, dist = {round(food_angle, 2)}, {round(food_dist, 2)}")
         speed, direction = self.brain.runInputs([self.food,
-                                                food_angle/2*pi,
+                                                food_angle/(2*pi),
                                                 food_dist])
 
+        #print(f"Angle, speed = {round(direction*2*pi, 2)}, {round(speed, 2)}")
         self.move(speed, direction*2*pi)
         
     def move(self, speed, direction):

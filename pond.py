@@ -4,6 +4,7 @@ from math import sqrt, atan, pi
 from random import uniform
 import pickle as Pi
 import time as time
+import numpy as np
 
 class Pond():
 
@@ -64,15 +65,25 @@ class Pond():
         return
 
     def getNearestFood(self, organism):
-
-            nearestFood = self.food[0]
-            nearestDist = getDistance(organism, self.food[0])
-            for food in self.food:
-                d = getDistance(organism, food)
-                if d < nearestDist:
-                    nearestDist = d
-                    nearestFood = food
-            return getAngle(organism, nearestFood), nearestDist
+        
+        nearestFood = self.food[0]
+        nearestDist = getDistance(organism, self.food[0])
+        for food in self.food[1:]:
+            d = getDistance(organism, food)
+            if d < nearestDist:
+                nearestDist = d
+                nearestFood = food
+        return getAngle(organism, nearestFood), nearestDist
+        
+        '''
+        nodes = np.array([[i.pos['x'], i.pos['y']] for i in self.food])
+        node = [organism.pos['x'], organism.pos['y']]
+        deltas = nodes - node
+        dist_2 = np.einsum('ij,ij->i', deltas, deltas)
+        nearestFood = self.food[np.argmin(dist_2)]
+        nearestDist = getDistance(organism, nearestFood)
+        return getAngle(organism, nearestFood), nearestDist
+        '''
         
     def removeEatenFood(self):
         
@@ -172,7 +183,7 @@ def getAngle(a,b):
 def time_test():
     
     p = Pond(100)
-    p.runForN(1000)
+    p.runForN(100)
     return(Pi.load(open(p.save(), 'rb')))
     
 if __name__ == "__main__":
@@ -181,6 +192,6 @@ if __name__ == "__main__":
     Last timing test was 70 s
     0.7 ms per org per step.
     '''
-    p = Pond(100)
-    p.runForN(10000)
+    p = Pond(10)
+    p.runForN(100)
     q = Pi.load(open(p.save(), 'rb'))

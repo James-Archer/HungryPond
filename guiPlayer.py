@@ -63,7 +63,7 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event):
         
         self.running = False
-        time.sleep(0.1)
+        time.sleep(0.2)
         event.accept()
         
     def updateText(self):
@@ -232,7 +232,7 @@ class PondThread(QThread):
 if __name__=='__main__':
     
     app = QApplication(sys.argv)
-    ex = MainWindow(pond.Pond(10))
+    ex = MainWindow(pond.Pond(1))
     for i in ex.pond.orgs:
         i.loadBrain('brain4', mutate = False)
     ex.pondThread.start()
