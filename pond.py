@@ -66,6 +66,7 @@ class Pond():
 
     def getNearestFood(self, organism):
         
+        '''
         nearestFood = self.food[0]
         nearestDist = getDistance(organism, self.food[0])
         for food in self.food[1:]:
@@ -74,7 +75,6 @@ class Pond():
                 nearestDist = d
                 nearestFood = food
         return getAngle(organism, nearestFood), nearestDist
-        
         '''
         nodes = np.array([[i.pos['x'], i.pos['y']] for i in self.food])
         node = [organism.pos['x'], organism.pos['y']]
@@ -83,7 +83,7 @@ class Pond():
         nearestFood = self.food[np.argmin(dist_2)]
         nearestDist = getDistance(organism, nearestFood)
         return getAngle(organism, nearestFood), nearestDist
-        '''
+        
         
     def removeEatenFood(self):
         

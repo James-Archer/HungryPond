@@ -232,8 +232,8 @@ class PondThread(QThread):
 if __name__=='__main__':
     
     app = QApplication(sys.argv)
-    ex = MainWindow(pond.Pond(1))
+    ex = MainWindow(pond.Pond(10))
     for i in ex.pond.orgs:
-        i.loadBrain('brain4', mutate = False)
+        i.brain = pond.brains['Naive Brain']
     ex.pondThread.start()
     sys.exit(app.exec_())

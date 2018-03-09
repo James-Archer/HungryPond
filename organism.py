@@ -75,12 +75,13 @@ class Organism:
 
     def think(self):
         food_angle, food_dist = self.pond.getNearestFood(self)
-        #print(f"Angle, dist = {round(food_angle, 2)}, {round(food_dist, 2)}")
+        #print(f"In: Angle, dist = {round(food_angle, 2)}, {round(food_dist, 2)}")
         speed, direction = self.brain.runInputs([self.food,
                                                 food_angle/(2*pi),
                                                 food_dist])
+        #speed, direction = 1, food_angle/(2*pi)
 
-        #print(f"Angle, speed = {round(direction*2*pi, 2)}, {round(speed, 2)}")
+        #print(f"Out: Angle, speed = {round(direction*2*pi, 2)}, {round(speed, 2)}")
         self.move(speed, direction*2*pi)
         
     def move(self, speed, direction):
